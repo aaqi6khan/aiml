@@ -1,0 +1,307 @@
+#1
+
+def AStarAlgo(start_node,stop_node):
+    
+    open_set=set(start_node)
+    closed_set=set()
+    
+    g={}
+    parents={}
+    
+    g[start_node]=0
+    parents[start_node]=start_node
+    
+    while len(open_set)>0:
+        n=None
+        
+        for v in open_set:
+            if n==None or g[v]+heuristic(v)<g[n]+heuristic(n):
+                n=v
+                
+        if n==stop_node or Graph_nodes[n]==None:
+            pass
+        
+        else:
+            for (m,weight) in getNeighbors(n):
+                if m not in open_set and m not in closed_set:
+                    open_set.add(m)
+                    parents[m]=n
+                    g[m]=g[n]+weight
+                else:
+                    if g[m]>g[n]+weight:
+                        g[m]=g[n]+weight
+                        parents[m]=n
+                        if m in closed_set:
+                            closed_set.remove(m)
+                            open_set.add(m)
+        if n==None:
+            print("path doesnt exist")
+            return None
+        if n==stop_node:
+            path=[]
+            while parents[n]!=n:
+                path.append(n)
+                n=parents[n]
+            path.append(start_node)
+            path.reverse()
+            print('Path found:{}'.format(path))
+            return path
+        open_set.remove(n)
+        closed_set.add(n)
+    print('path doesnt exist')
+    return None
+def getNeighbors(v):
+    if v in Graph_nodes:
+        return Graph_nodes[v]
+    else:
+        return None
+def heuristic(n):
+    h_dist={
+        'S':14,'B':12,'C':11,'D':6,'E':4,'F':11,'G':0
+    }
+    return h_dist[n]
+Graph_nodes={
+    'S':[('B',4),('C',3)],
+    'B':[('E',12),('F',5)],
+    'C':[('D',7),('E',10)],
+    'D':[('E',2)],
+    'E':[('G',5)],
+    'F':[('G',16)]  
+}
+AStarAlgo('S','G')
+
+
+-----------------------------
+
+
+#3
+
+import numpy as np
+import pandas as pd
+data=pd.DataFrame(data=pd.read_csv('trainingData.csv'))
+concepts=np.array(data.iloc[:,0:-1])
+target=np.array(data.iloc[:,-1])
+def learn(concepts,target):
+    print("intialization of specifi_f and general_")
+    l=len(concepts[0])
+    specific_h=['0']*l
+    general_h=['?']*l
+    print(specific_h)
+    print(general_h)
+    specific_h=concepts[0].copy()
+    general_h=[["?" for i in range(len(specific_h))]for i in range(len(specific_h))]
+    for i,h in enumerate(concepts):
+        if target[i]=="Yes":
+            for x in range(len(specific_h)):
+                if h[x]!=specific_h[x]:
+                    specific_h[x]='?'
+                    general_h[x][x]='?'
+        if target[i]=="No":
+            for x in range(len(specific_h)):
+                if h[x]!=specific_h[x]:
+                    general_h[x][x]=specific_h[x]
+                else:
+                    general_h[x][x]='?'
+        print("step ",(i+1)," of candidate elimination method ")
+        print(specific_h)
+        print(general_h)
+    indices=[i for i,val in enumerate(general_h) if val==['?','?','?','?','?','?']]
+    for i in indices:
+        general_h.remove(['?','?','?','?','?','?'])
+    return specific_h,general_h
+s_final,g_final=learn(concepts,target)
+print("final specific: ",s_final,sep="\n")
+print("final general: ",g_final,sep="\n")
+
+----------------------------------------------
+
+#5
+
+
+import numpy as np
+
+x = np.array(([2, 9], [1, 5],[3,6]),dtype=float)
+y = np.array(([92], [86],[89]),dtype=float)
+
+x = x/np.amax(x,axis=0)
+y = y/100
+
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
+
+def derivatives_sigmoid(x):
+    return x*(1-x)
+
+epoch = 7000
+lr = 0.1
+inputlayer_neurons = 2
+hiddenlayer_neurons = 3
+output_neurons = 1
+
+wh = np.random.uniform(size=(inputlayer_neurons,hiddenlayer_neurons))
+bh = np.random.uniform(size=(1,hiddenlayer_neurons))
+wout = np.random.uniform(size=(hiddenlayer_neurons,output_neurons))
+bout = np.random.uniform(size=(1,output_neurons))
+
+for i in range(epoch):
+    hinp1 =np.dot(x,wh)
+    hinp = hinp1 + bh
+    hlayer_act = sigmoid(hinp)
+    outinp1 = np.dot(hlayer_act,wout)
+    outinp = outinp1 + bout
+    output = sigmoid(outinp)
+    
+    EO = y- output
+    outgrad = derivatives_sigmoid(output)
+    d_output = EO * outgrad
+    EH = d_output.dot(wout.T)
+    
+    hiddengrad = derivatives_sigmoid(hlayer_act)
+    d_hiddenlayer = EH * hiddengrad
+    wout += hlayer_act.T.dot(d_output) * lr
+    wh += x.T.dot(d_hiddenlayer) * lr
+    
+print("Input: \n" + str(x))
+print("Actual Output: \n" + str(y))
+print("Predicted Output:\n",output)
+
+
+----------------------------------------------------
+
+#7
+
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn import preprocessing
+from sklearn.mixture import GaussianMixture
+import sklearn.metrics as sm
+import pandas as pd
+import numpy as np
+iris_dataset=pd.read_csv('iris.csv')
+iris_dataset['Targets']=iris_dataset.Class.map({'Iris-setosa':0,'Iris-versicolor':1,'Iris-virginica':2})
+x=iris_dataset[['Sepal_Length','Sepal_Width','Petal_Length','Petal_Width']]
+y=iris_dataset[['Targets']]
+#print(y)
+model=KMeans(n_clusters=3)
+model.fit(x)
+print('Model Labels:\n',model.labels_)
+scaler=preprocessing.StandardScaler()
+scaler.fit(x)
+xs=scaler.transform(x)
+gmm=GaussianMixture(n_components=3)
+gmm.fit(xs)
+y_gmm=gmm.predict(xs)
+print('GMM Labels:\n',y_gmm)
+plt.figure(figsize=(10,10))
+colormap=np.array(['red','lime','black'])
+plt.subplot(2,2,1)
+plt.scatter(x.Petal_Length,x.Petal_Width,c=colormap[y.Targets],s=40)
+plt.title('Real CLassification')
+plt.xlabel('Petal Length')
+plt.ylabel('Petal Width')
+plt.subplot(2,2,2)
+plt.scatter(x.Petal_Length,x.Petal_Width,c=colormap[model.labels_],s=40)
+plt.title('KMeans clustering')
+plt.xlabel('Petal Length')
+plt.ylabel('Petal Width')
+plt.subplot(2,2,3)
+plt.scatter(x.Petal_Length,x.Petal_Width,c=colormap[y_gmm],s=40)
+plt.title('GMM Based Clustering')
+plt.xlabel('Petal Length')
+plt.ylabel('Petal Width')
+print('Evaluation of K-Means with ground truth classification of Iris Dataset')
+print('Rand Index:%f' % sm.adjusted_rand_score(y.Targets,model.labels_))
+print('Homogenity Score:%f' % sm.homogeneity_score(y.Targets,model.labels_))
+print('Completeness Score:%f' % sm.completeness_score(y.Targets,model.labels_))
+print('V_Measure:%f' % sm.v_measure_score(y.Targets,model.labels_))
+print('Evaluation of GMM with ground truth classiification of Iris Dataset')
+print('Rand Index:%f' % sm.adjusted_rand_score(y.Targets,y_gmm))
+print('Homogenity Score:%f' % sm.homogeneity_score(y.Targets,y_gmm))
+print('Completeness Score:%f' % sm.completeness_score(y.Targets,y_gmm))
+print('V_Measure:%f' % sm.v_measure_score(y.Targets,y_gmm))
+
+
+
+
+----------------------------
+
+#8
+
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import datasets
+
+iris = datasets.load_iris()
+print("Iris Data Set loaded...")
+x_train,x_test,y_train,y_test = train_test_split(iris.data,iris.target,test_size=0.1)
+print("Dataset is split into training and testing samples...")
+print("size of training data and its label",x_train.shape,y_train.shape)
+print("size of testing data and its label",x_test.shape,y_test.shape)
+
+for i in range(len(iris.target_names)):
+    print("Label",i,"-",str(iris.target_names[i]))
+
+classifier = KNeighborsClassifier(n_neighbors = 1)
+classifier.fit(x_train,y_train)
+y_pred = classifier.predict(x_test)
+print("Results of classification using K-nn with K=1")
+for r in range(0,len(x_test)):
+    print("sample :",str(x_test[r]),"Actual-label :",str(y_test[r]),"Predicted-label :",str(y_pred[r]))
+    
+print("classification accuracy :",classifier.score(x_test,y_test))
+
+
+
+-----------------------------------------------------------------------
+
+#9
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+def kernel(point,xmat,k):
+    m,n = np.shape(xmat)
+    weights = np.mat(np.eye((m)))
+    for j in range(m):
+        diff = point-X[j]
+        weights[j,j] = np.exp(diff*diff.T/(-2.0*k**2))
+    return weights
+
+def localWeight(point,xmat,ymat,k):
+    wei = kernel(point,xmat,k)
+    W = (X.T*(wei * X)).I*(X.T*(wei * ymat.T))
+    return W
+
+def localWeightRegression(xmat,ymat,k):
+    m,n = np.shape(xmat)
+    ypred = np.zeros(m)
+    for i in range(m):
+        ypred[i] = xmat[i]*localWeight(xmat[i],xmat,ymat,k)
+    return ypred
+
+def grapPlot(X,ypred):
+    sortindex = X[:,1].argsort(0)
+    xsort = X[sortindex][:,0]
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.scatter(bill,tip,color='green')
+    ax.plot(xsort[:,1],ypred[sortindex],color = 'red',linewidth=5)
+    plt.xlabel('Total bill')
+    plt.ylabel('Tip')
+    plt.show()
+
+data = pd.read_csv('Tips.csv')
+bill = np.array(data.total_bill)
+tip = np.array(data.tip)
+mbill = np.mat(bill)
+mtip = np.mat(tip)
+m = np.shape(mbill)[1]
+one = np.mat(np.ones(m))
+X = np.hstack((one.T,mbill.T))
+print('\n ypred for k=3')
+ypred = localWeightRegression(X,mtip,3)
+grapPlot(X,ypred)
+print('\n ypred for k=9')
+ypred = localWeightRegression(X,mtip,9)
+grapPlot(X,ypred)
